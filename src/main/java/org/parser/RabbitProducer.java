@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.rabbitmq.client.*;
 
 import entities.Message;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -15,6 +17,7 @@ public class RabbitProducer {
     private final Connection connection;
     private final Channel channel;
     public static String PRODUCER_QUEUE_NAME = "producer_queue";
+    private static final Logger logger = LogManager.getLogger(RabbitProducer.class);
 
     public RabbitProducer() throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
@@ -38,7 +41,7 @@ public class RabbitProducer {
                 String jsonMessage = gson.toJson(message);
 
                 channel.basicPublish("", PRODUCER_QUEUE_NAME, null, jsonMessage.getBytes());
-                System.out.println("Link " + message.getLink() + " queued.");
+                logger.debug("Link " + message.getLink() + " queued.");
             }
             channel.close();
             connection.close();

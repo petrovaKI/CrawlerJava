@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.rabbitmq.client.*;
 import entities.Message;
 import entities.News;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -18,6 +20,7 @@ public class RabbitConsumer {
     private AtomicInteger totalLinks = new AtomicInteger(0);
     public static String CONSUMER_QUEUE_NAME = "consumer_queue";
     private final Object lock = new Object();
+    private static final Logger logger = LogManager.getLogger(RabbitConsumer.class);
 
 
     public RabbitConsumer() throws IOException, TimeoutException {
@@ -42,10 +45,11 @@ public class RabbitConsumer {
             long lastMessageTime = System.currentTimeMillis();
 
             while (true) {
+                //использован basicGet, так как нет необходимости постоянно слушать очередь producer-a
+                //на момент выполнения этого метода, она полностью готова к использованию
                 GetResponse response = channel.basicGet(RabbitProducer.PRODUCER_QUEUE_NAME, false);
                 if (response == null) {
                     if (System.currentTimeMillis() - lastMessageTime > timeoutMillis) {
-                        System.out.println("No messages received within timeout. Exiting...");
                         break;
                     }
                     Thread.sleep(1000);
@@ -58,11 +62,11 @@ public class RabbitConsumer {
                 long tag = response.getEnvelope().getDeliveryTag();
                 String message = new String(body, StandardCharsets.UTF_8);
 
-                System.err.println("Message received " + message);
+                logger.debug("Message received " + message);
 
                 Message msg = gson.fromJson(message, Message.class);
                 if (msg == null || msg.getLink() == null) {
-                    System.err.println("Invalid message format or missing link");
+                    logger.error("Invalid message format or missing link");
                     channel.basicNack(tag, false, false);
                     continue;
                 }
@@ -74,18 +78,18 @@ public class RabbitConsumer {
                             synchronized (lock){
                             String newsJson = gson.toJson(news);
                             channel.basicPublish("", CONSUMER_QUEUE_NAME, null, newsJson.getBytes());
-                            System.out.println("News sent to queue: " + news.getLink());
+                            logger.debug("News sent to queue: " + news.getLink());
                         }
                     }
                     channel.basicAck(tag, false);
                     totalLinks.incrementAndGet();
-                    System.err.println("Message deleted " + message);
+                    logger.debug("Message deleted " + message);
                 } catch (Exception ex) {
-                    ex.printStackTrace(System.err);
+                    logger.error(System.err);
                     try {
                         channel.basicNack(tag, false, true);
                     } catch (IOException ioException) {
-                        ioException.printStackTrace(System.err);
+                        logger.error(System.err);
                     }
                 }
             }
@@ -94,7 +98,7 @@ public class RabbitConsumer {
             connection.close();
 
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            logger.error(e.getMessage());
         }
     }
     public int getTotalLinks() {

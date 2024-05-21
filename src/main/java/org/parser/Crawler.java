@@ -15,7 +15,11 @@ import java.util.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class Crawler {
+    private static final Logger logger = LogManager.getLogger(Crawler.class);
     public static  List<Message> startCrawling(String startUrl) throws InterruptedException {
 
         System.setProperty("webdriver.chrome.driver", "chromedriver.exe");
@@ -37,18 +41,23 @@ public class Crawler {
     }
 
     private static List<Message> getLinks(String startUrl, WebDriver driver) {
-        List<Message> messages = new ArrayList<>();
-        Document doc = Jsoup.parse(driver.getPageSource());
-        Elements linkElements = doc.select("div.listing.news-listing a[href]");
-        for (Element linkElement : linkElements) {
-            String href = linkElement.attr("href");
-            String title = linkElement.text();
-            String hash = calculateHash(href);
+        try {
+            List<Message> messages = new ArrayList<>();
+            Document doc = Jsoup.parse(driver.getPageSource());
+            Elements linkElements = doc.select("div.listing.news-listing a[href]");
+            for (Element linkElement : linkElements) {
+                String href = linkElement.attr("href");
+                String title = linkElement.text();
+                String hash = calculateHash(href);
 
-            Message message = new Message(startUrl+href, title, hash);
-            messages.add(message);
+                Message message = new Message(startUrl + href, title, hash);
+                messages.add(message);
+            }
+            return messages;
+        }catch (Exception e){
+            logger.error(e.getMessage());
+            return new ArrayList<>();
         }
-        return messages;
     }
 
 
@@ -59,8 +68,6 @@ public class Crawler {
             seeMoreButton.click();
         }catch (ElementNotInteractableException e){
             Thread.sleep(2000);
-        } catch (Exception e) {
-            System.out.println(e);
         }
     }
     private static boolean isSeeMoreButtonPresent(WebDriver driver) {
@@ -87,7 +94,7 @@ public class Crawler {
             }
             return hash.toString();
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
             return null;
         }
     }

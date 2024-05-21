@@ -1,6 +1,8 @@
 package org.parser;
 
 import entities.News;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -15,6 +17,7 @@ import java.net.URL;
 import java.util.Objects;
 
 public class Parser{
+    private static final Logger logger = LogManager.getLogger(Parser.class);
 
     static News startParsing(String urlString) {
         try {
@@ -38,10 +41,10 @@ public class Parser{
                 connection.disconnect();
                 return getNews(content, urlString);
             }else {
-                System.out.println(status);
+                logger.error(status);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
         }
         return null;
     }
@@ -50,7 +53,7 @@ public class Parser{
         Document doc = Jsoup.parse(content.toString());
         Element newsDoc = doc.select("div.vmroot.article.marticle.marticle_first").first();
         if (newsDoc == null) {
-            System.out.println("Warning: URL not processed properly: " + url);
+            logger.error("Warning: URL not processed properly: " + url);
             return null;
         }
 
