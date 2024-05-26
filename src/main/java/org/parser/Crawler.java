@@ -1,6 +1,6 @@
 package org.parser;
 
-import entities.Message;
+import models.Message;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;

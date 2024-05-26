@@ -2,8 +2,8 @@ package org.parser;
 
 import com.google.gson.Gson;
 import com.rabbitmq.client.*;
-import entities.Message;
-import entities.News;
+import models.Message;
+import models.News;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,7 +17,7 @@ import static org.parser.Parser.startParsing;
 public class RabbitConsumer {
     private final Connection connection;
     private final Channel channel;
-    private AtomicInteger totalLinks = new AtomicInteger(0);
+    private final AtomicInteger totalLinks = new AtomicInteger(0);
     public static String CONSUMER_QUEUE_NAME = "consumer_queue";
     private final Object lock = new Object();
     private static final Logger logger = LogManager.getLogger(RabbitConsumer.class);
@@ -34,11 +34,10 @@ public class RabbitConsumer {
         connection = factory.newConnection();
         channel = connection.createChannel();
 
-        channel.queueDeclare(RabbitProducer.PRODUCER_QUEUE_NAME, false, false, false, null);
         channel.queueDeclare(CONSUMER_QUEUE_NAME, false, false, false, null);
     }
 
-    public void getLinksFromRabbitMQ() {
+    public int getLinksFromRabbitMQ() {
         try {
             Gson gson = new Gson();
             long timeoutMillis = 60000;
@@ -62,7 +61,7 @@ public class RabbitConsumer {
                 long tag = response.getEnvelope().getDeliveryTag();
                 String message = new String(body, StandardCharsets.UTF_8);
 
-                logger.debug("Message received " + message);
+                logger.debug("Message received from producer queue: " + message);
 
                 Message msg = gson.fromJson(message, Message.class);
                 if (msg == null || msg.getLink() == null) {
@@ -73,17 +72,18 @@ public class RabbitConsumer {
 
                 try {
                     String link = msg.getLink();
-                    News news = startParsing(link);
+                    String id = msg.getID();
+                    News news = startParsing(link, id);
                     if (news != null) {
-                            synchronized (lock){
+                        synchronized (lock){
                             String newsJson = gson.toJson(news);
                             channel.basicPublish("", CONSUMER_QUEUE_NAME, null, newsJson.getBytes());
-                            logger.debug("News sent to queue: " + news.getLink());
+                            logger.debug("News sent to consumer queue: " + news.getLink());
                         }
                     }
                     channel.basicAck(tag, false);
                     totalLinks.incrementAndGet();
-                    logger.debug("Message deleted " + message);
+                    logger.debug("Message deleted from producer queue: " + message);
                 } catch (Exception ex) {
                     logger.error(System.err);
                     try {
@@ -96,13 +96,11 @@ public class RabbitConsumer {
 
             channel.close();
             connection.close();
-
+            return totalLinks.get();
         } catch (Exception e) {
             logger.error(e.getMessage());
         }
-    }
-    public int getTotalLinks() {
-        return totalLinks.get();
+        return 0;
     }
 }
 

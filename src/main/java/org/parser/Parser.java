@@ -1,6 +1,6 @@
 package org.parser;
 
-import entities.News;
+import models.News;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
@@ -19,7 +19,7 @@ import java.util.Objects;
 public class Parser{
     private static final Logger logger = LogManager.getLogger(Parser.class);
 
-    static News startParsing(String urlString) {
+    static News startParsing(String urlString, String id) {
         try {
             URL url = new URL(urlString);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -39,7 +39,7 @@ public class Parser{
                 inputStream.close();
 
                 connection.disconnect();
-                return getNews(content, urlString);
+                return getNews(content, urlString, id);
             }else {
                 logger.error(status);
             }
@@ -49,7 +49,7 @@ public class Parser{
         return null;
     }
 
-    private static News getNews(StringBuilder content, String url){
+    private static News getNews(StringBuilder content, String url, String id){
         Document doc = Jsoup.parse(content.toString());
         Element newsDoc = doc.select("div.vmroot.article.marticle.marticle_first").first();
         if (newsDoc == null) {
@@ -73,7 +73,7 @@ public class Parser{
         String text = newsDoc.attr("data-descr");
         String date = newsDoc.attr("data-doc-published");
 
-        return new News(url, title, text, date, author);
+        return new News(url, title, text, date, author, id);
     }
     private static String getResponseStatus(int responseCode) {
         return switch (responseCode) {

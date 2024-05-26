@@ -3,7 +3,7 @@ package org.parser;
 import com.google.gson.Gson;
 import com.rabbitmq.client.*;
 
-import entities.Message;
+import models.Message;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

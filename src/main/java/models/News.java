@@ -1,4 +1,4 @@
-package entities;
+package models;
 
 public class News {
     private final String link;
@@ -6,20 +6,17 @@ public class News {
     private final String text;
     private final String date;
     private final String author;
+    private final String id;
 
-    public News(String link, String title, String text, String date, String author) {
+    public News(String link, String title, String text, String date, String author, String id) {
         this.link = link;
         this.title = title;
         this.text = text;
         this.date = date;
         this.author = author;
+        this.id = id;
     }
     public String getLink() {return link;}
-    public String getTitle() { return title;}
-    public String getText() {
-        return text;
-    }
-    public String getDate(){return date;}
-    public String getAuthor(){return author;}
+    public String getId(){return id;}
 
 }
