@@ -112,19 +112,23 @@ public class ElasticConsumer {
                 {
                   "properties": {
                     "title": {
-                      "type": "text"
+                      "type": "text",
+                      "fielddata": true
                     },
                     "date": {
-                      "type": "text"
+                      "type": "text",
+                      "fielddata": true
                     },
                     "text": {
-                      "type": "text"
+                      "type": "text",
+                      "fielddata": true
                     },
                     "link": {
                       "type": "text"
                     },
                     "author": {
-                      "type": "text"
+                      "type": "text",
+                      "fielddata": true
                     },
                     "id": {
                       "type": "keyword"
